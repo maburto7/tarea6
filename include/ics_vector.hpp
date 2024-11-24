@@ -228,20 +228,22 @@ The template type name can be T
 
 
     /* 
-    The erase function. It takes in a start and end Iterator
+    The erase function. It takes in a start and end Iterator.
+    Once again, it is end-exclusive
     Hints for implementation:
         0 1 2 3 4 5
-    We want to delete 1 2 3 4
+    We want to delete 1 2 3: start points to 1 and end points to 4
         0    1    2    3    4    5
              ^start         ^end
     Replace what is at start with what is at end and advance start and end until it reaches the vec.end()
         0    4    2    3    4    5
                   ^s             ^e
-        0    4    2    5    4    5
+        0    4    5    3    4    5
                        ^s            e=vec.end()
     Is anything after what s is now including s used?
-    Hint: resize the vector to include only 0 4 2. You will implement resize anyways.
+    Hint: resize the vector to include only 0 4 5. You will implement resize anyways.
     */
+
 
 
 
