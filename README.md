@@ -66,7 +66,7 @@ A main source of exceptions is allocation, as every time `new` is used, it may t
 - `void push_back(const T&)` appends an item onto the vector, resizing to twice the initial capacity or 1 whichever is larger
 - `void push_back(T&&)` appends an item onto the vector, resizing to twice the initial capacity or 1 whichever is larger. This version of `push_back` must `std::move` the item
 - `void pop_back()` removes and destroys the last item of the vector, throwing an exception if no item exists. The exception message should be "popping from empty".
-- `void erase(start, end)` removes the range between the `start` and `end` iterators provided. If `start == end`, no items should be erased. It should only modify size. Assume that `start <= end`
+- `void erase(start, end)` removes the range between the `start` and `end` iterators provided. Erase is end exclusive. It will delete start and all elements until end but not end itself. If `start == end`, no items should be erased. It should only modify size. Assume that `start <= end`
 - `void swap_elements(lhs, rhs) noexcept` swaps the items pointed at by the two iterators provided using `std::move`.
 - `T & operator[](size_t index) noexcept` returns a reference to the item at the provided index. For performance reasons, there is no bounds check.
 - `T const & operator[](size_t index) const noexcept` returns a const reference to the item at the provided index. For performance reasons, there is no bounds check.
