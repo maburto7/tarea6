@@ -9,101 +9,165 @@ Some functions may throw exceptions while others are noexcept.
 */
 
 /* Preprocessor directives. Guard the header file upon include */
+#include <ostream>
+#include <vector_exception.hpp>
 
 /*
 Which include directives should you put here?
 (hint: we may throw VectorExceptions. We also want to use ostream)
 */
 
-
+template <typename T>
 /*
 Templated Vector class definition with templated Iterator class member
 The template type name can be T
 */
+class Vector{
+    /* Begin by specifying private members of Vector */
+    private:
+        size_t capacity;
+        size_t size;
+        T* buffer;
 
+        /* We want to nest the Iterator class definition right here */
 
-
-/* Begin by specifying private members of Vector */
-
-    /* We want to nest the Iterator class definition right here */
-
-
-    /* Write out the private members of Iterator */
+            /* Write out the private members of Iterator */
 
         /* there should be an m_container and an index */
 
+        class Iterator{
+            private:
+                Vector<T>& m_container; //reference of a vector of type T is stored in variable
+                size_t index;
 
-
+            public:
+        
     /* Here are our your public members of Iterator*/
 
+
         /* Write your constructors here */
+                Iterator(Vector<T>& m_container , size_t index) //vectors take a container and an index only
+                : m_container(m_container), index(index) {} //assign the values  to the private attributes of class vector
 
-
-
+        
         /* Write your operator overloads here.*/
+                
+
         /* Post and pre increment and decrement operators*/
 
+                Iterator & operator++(){ //by reference
+                    if (index >= m_container.size()){throw VectorException("out of bounds");}
+                    
+                    ++index;
+                    return *this;
+                }
 
+                Iterator operator++(){
+                    if (index >= m_container.size()){throw VectorException("out of bounds"); }
+                    
+                    Iterator temp = *this; //make copy because it is post increment
+                    ++index;
+                    return temp;
+                }
 
+                Iterator & operator--(){ //by reference
+                    if (index < m_container.size()|| index ==0){throw VectorException("out of bounds");}
+                    --index;
+                    return *this;
+                    }
 
-
-
-
+                
+                Iterator operator--(){
+                    if (index < m_container.size() || index ==0){throw VectorException("out of bounds");}
+                    
+                    Iterator temp = *this;
+                    --index;
+                    return temp;
+                        }
 
 
         /* Overloaded += size_t operator */
 
-
-
-
-
-
-
-
+                Iterator & operator+=(size_t offset) const{
+                    if((index + offset) > m_container.size()){throw VectorException("out of bounds");}
+                    Iterator temp = *this;
+                    temp.index += offset;
+                    //index += offset;
+                    return *this;
+                                    }
 
         /* Overloaded -= size_t operator */
 
+                Iterator & operator-=(size_t offset) const{
+                    if((index - offset) <= 0){throw VectorException("out of bounds");}
 
-
-
-
-
+                    Iterator temp = *this;
+                    temp.index -= offset;
+                    //index -= offset;
+                    return *this;
+                                    }
 
 
         /* Overloaded - operator. The right hand side is a const Iterator& */
-
-
-
-
-
-
-
-
-
+                size_t operator-(const Iterator & second) const{
+                    if (m_container == second.m_container){
+                        return index - second.index;
+                    } else{
+                        throw VectorException("iterators point to different containers");
+                    }
+                }
 
         /* Overloaded - operator.  The right hand side is a size_t */
+                Iterator operator-(size_t offset) const{
+                 if((index - offset) <= 0){throw VectorException("out of bounds");}
 
-
-
-
-
-
-
-
+                Iterator temp = *this;
+                temp.index = index - offset;
+                return temp;
+                }
+    
 
         /* Overloaded == operator. The right hand side is a const Iterator& */
 
-
+                bool operator==(const Iterator& second) const noexcept{
+                // Ensure they are from the same container and point to the same index
+                if (m_container == second.m_container && index == second.m_container){
+                    return true;
+                
+                } else{
+                    return false;
+                }
+        }
 
 
         /* Overloaded != operator. The right hand side is const Iterator& */
+                bool operator!=(const Iterator& second) const noexcept{
+                    
+                if (m_container != second.m_container || index != second.m_container){
+                    return true;
+                
+                }
+                return false;
+                
+        }
 
 
         /* Overloaded star (*) operator to dereference. This returns a T& */
+                T & operator*() const{
+                    if (index == m_container.size()){
+                        throw VectorException("out of bounds");
+                        }
+
+                    return m_container.buffer[index];
+                }
 
 
         /* Overloaded -> operator. This returns a T* */
-
+                T & operator->() const{
+                    if (index == m_container.size()){throw VectorException("out of bounds");}
+                    
+                    return &m_container.buffer[index];
+                }
 
         /*
         It is correct to add a size_t to an Iterator.
@@ -111,58 +175,51 @@ The template type name can be T
         Remember, using + on Iterators is commutative.
         1 + Iterator and Iterator + 1 both return an Iterator that is one forward.
         */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        };
 
     /* Specify your private Vector member fields. There should be three */
-
-
-
+    public:
 /* You will define your public Vector members here*/
 
     /* Default constructor */
+        Vector() : capacity(0), size(0), buffer(nullptr){}
 
 
     /* An overloaded constructor (see README) */
-
+        Vector(size_t capacity): capacity(capacity), buffer(capacity){}
 
 
     /* The begin() function */
+        Iterator begin() noexcept{
+            return Iterator(*this, 0)
+        }
 
 
     /* The const version of begin(). Note: it returns a const T* type */
-
+        T const * begin(){
+            if (size == 0) {return nullptr; }
+            
+            return const Iterator(*this, 0);
+        }
 
     /* The empty() function */
-
+    bool empty() const noexcept{
+        size == 0 ? true: false;
+    }
+        
 
     /* The end() function */
-
+        Iterator end() noexcept{
+            return Iterator(*this, size);
+        }
 
 
 
     /* The const version of end(). Note: it returns a const T* */
-
-
+        T const * end() const noexcept{
+            if (size == 0) {return nullptr; }
+            return const Iterator(*this, size);
+        }
 
 
 
@@ -392,7 +449,7 @@ The template type name can be T
     */
 
 
-
+};
 
 
 
@@ -401,6 +458,9 @@ The template type name can be T
 
     
     /* The Vector destructor goes here. Make sure there are no leaks */
+    ~Vector(){
+        delete [] buffer;
+    }
 
 /* 
 And we are finished with this header file! 
