@@ -39,6 +39,19 @@ class Vector{
         /* there should be an m_container and an index */
 
         class Iterator{
+            friend Iterator operator+(size_t offset, const Iterator &iter){
+                Iterator temp = iter;
+                temp.index += offset;
+                return temp;
+            }
+
+            friend Iterator operator+(const Iterator &iter, size_t offset) {
+                Iterator temp = iter;
+                temp.index += offset;
+                return temp;
+        }
+
+
             private:
                 Vector<T>& m_container; //reference of a vector of type T is stored in variable
                 size_t index;
@@ -60,7 +73,7 @@ class Vector{
                 //copy assignment operator
                 Iterator& operator=(const Iterator& other) {
                     if (this != &other) {
-                        m_container = other.m_container;
+                        //m_container = other.m_container;
                         index = other.index;
                     }
                     return *this;
@@ -69,10 +82,10 @@ class Vector{
                 //move assignment operator
                 Iterator& operator=(Iterator&& other) noexcept {
                     if (this != &other) {
-                        m_container = other.m_container;
+                        //m_container = other.m_container;
                         index = other.index;
                         other.index = 0; 
-                        other.m_container = nullptr;
+
                     }
                     return *this;
                 }
@@ -252,7 +265,7 @@ class Vector{
 
 
     /* The const version of begin(). Note: it returns a const T* type */
-        T const * begin(int){
+        T const * begin() const noexcept{
             if (m_size == 0) {return nullptr; }
             
             return &buffer[0];
@@ -309,7 +322,8 @@ class Vector{
         //if it is 0, set capacity to 1, else twice its size
         if (m_size==0){
             capacity = 1;
-        } else{
+        }
+        else{
             capacity = capacity * 2;
         }
 
