@@ -39,15 +39,23 @@ class Vector{
         /* there should be an m_container and an index */
 
         class Iterator{
+
+            
             friend Iterator operator+(size_t offset, const Iterator &iter){
                 Iterator temp = iter;
-                temp.index += offset;
+                //temp.index += offset;
+                if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
+                
+                temp.index = temp.index + offset;
                 return temp;
             }
 
+
             friend Iterator operator+(const Iterator &iter, size_t offset) {
                 Iterator temp = iter;
-                temp.index += offset;
+                if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
+                
+                temp.index = temp.index + offset;
                 return temp;
         }
 
@@ -97,7 +105,7 @@ class Vector{
         /* Post and pre increment and decrement operators*/
 
                 Iterator & operator++(){ //by reference
-                    if (index > m_container.size()){throw VectorException("out of bounds");}
+                    if (index >= m_container.size()){throw VectorException("out of bounds");}
                     
                     ++index;
 
@@ -113,14 +121,14 @@ class Vector{
                 }
 
                 Iterator & operator--(){ //by reference
-                    if (index < m_container.size()|| index ==0){throw VectorException("out of bounds");}
+                    if (index <=0){throw VectorException("out of bounds");}
                     --index;
                     return *this;
                     }
 
-                
+                //post incrementor
                 Iterator operator--(int){
-                    if (index < m_container.size()|| index ==0){throw VectorException("out of bounds");}
+                    if (index <=0){throw VectorException("out of bounds");}
                     
                     Iterator temp = *this;
                     --index;
@@ -131,7 +139,7 @@ class Vector{
         /* Overloaded += size_t operator */
 
                 Iterator & operator+=(size_t offset){
-                    if((index + offset) > m_container.size()){throw VectorException("out of bounds");}
+                    if((index + offset) >= m_container.size()){throw VectorException("out of bounds");}
                     index += offset;
                     //index += offset;
                     return *this;
@@ -140,7 +148,7 @@ class Vector{
         /* Overloaded -= size_t operator */
 
                 Iterator & operator-=(size_t offset){
-                    if((index - offset) < 0){throw VectorException("out of bounds");}
+                    if (index < offset) { throw VectorException("out of bounds");}
                     index -= offset;
                     return *this;
                                     }
@@ -148,19 +156,20 @@ class Vector{
 
         /* Overloaded - operator. The right hand side is a const Iterator& */
                 size_t operator-(const Iterator & second) const{
-                    if (m_container != second.m_container){throw VectorException("iterators point to different containers");}
+                    if (m_container == second.m_container && index == second.index){
+                        return index - second.index;
+                    } 
+                    throw VectorException("iterators point to different containers");}
                     
-                    return index - second.index;
                     
-                }
 
         /* Overloaded - operator.  The right hand side is a size_t */
                 Iterator operator-(size_t offset) const{
-                 if((index - offset) <= 0){throw VectorException("out of bounds");}
-
-                Iterator temp = *this;
-                temp.index = index - offset;
-                return temp;
+                    
+                    if (index < offset) { throw VectorException("out of bounds");}
+                    Iterator temp = *this;
+                    temp.index = index - offset;
+                    return temp;
                 }
     
 
@@ -223,38 +232,38 @@ class Vector{
         Vector(size_t capacity): capacity(capacity), buffer(capacity){}
 
 
-      Vector& operator=(Vector& other) noexcept {
-        if (this != &other) {
-            if (capacity != other.capacity){
-            delete[] buffer; //deallocate buffer
+        Vector& operator=(Vector& other) noexcept {
+            if (this != &other) {
+                if (capacity != other.capacity){
+                delete[] buffer; //deallocate buffer
 
-            //recreate vector
-            buffer = new T[capacity];
+                //recreate vector
+                buffer = new T[capacity];
 
-            for (size_t i = 0; i < m_size; ++i) { //copying every value
-                buffer[i] = other.buffer[i];
-            }
+                for (size_t i = 0; i < m_size; ++i) { //copying every value
+                    buffer[i] = other.buffer[i];
+                }
 
-            //buffer = other.buffer;
-            capacity = other.capacity;
-            m_size = other.m_size;
+                //buffer = other.buffer;
+                capacity = other.capacity;
+                m_size = other.m_size;
 
-        }}
+            }}
         return *this;
     }
 
-    //move semantics
-    Vector(Vector&& other) noexcept{
-    
-        buffer = other.buffer;
-        capacity = other.capacity;
-        m_size = other.m_size;
-
-        other.buffer = nullptr;
-        other.capacity = 0;
-        other.m_size = 0;
+        //move semantics
+        Vector(Vector&& other) noexcept{
         
-    }
+            buffer = other.buffer;
+            capacity = other.capacity;
+            m_size = other.m_size;
+
+            other.buffer = nullptr;
+            other.capacity = 0;
+            other.m_size = 0;
+            
+        }
 
 
     /* The begin() function */
@@ -275,9 +284,9 @@ class Vector{
         }
 
     /* The empty() function */
-    bool empty() const noexcept{
-        return m_size == 0;
-    }
+        bool empty() const noexcept{
+            return m_size == 0;
+        }
         
 
     /* The end() function */
@@ -294,20 +303,23 @@ class Vector{
         }
 
     //m_size
-    size_t size() const noexcept{
-        return m_size;
-    }
+        size_t size() const noexcept{
+            return m_size;
+        }
 
 
     /* The front() function */
-
-
-
+        T & front() noexcept{
+            if(empty()){throw VectorException("front empty");}
+            return buffer[0];
+        }
 
     /* The const version of front(). Note it returns a const T& this is different from begin()! */
 
-
-
+        T const & front() const noexcept{
+            if(empty()){throw VectorException("front empty");}
+            return buffer[0];
+        }
 
     /* The back() function */
 
@@ -321,23 +333,20 @@ class Vector{
 
     /* The push_back() function */
 
-    void push_back(const T& item){
-        //if it is 0, set capacity to 1, else twice its size
-        if (m_size==0){
-            capacity = 1;
-        } else if (m_size == capacity) {
-            resize(capacity * 2); // Double the capacity when full
-        } else{
-        
-            buffer[m_size] = item;}
+        void push_back(const T& item) {
+            // If size is 0, set capacity to 1
+            if (m_size == 0) {
+                capacity = 1;
+                buffer = new T[capacity]; 
+            } else if (m_size == capacity) {
+                resize(capacity * 2); 
+            }
 
-    }
+            buffer[m_size] = item; 
+            ++m_size; 
+        }
 
-
-
-
-
-
+ 
     /* The push_back function that takes an RValue reference (Type of T&&) */
 
 
