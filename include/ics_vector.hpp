@@ -68,12 +68,12 @@ class Vector{
 
                 //big 5
                 //deepcopy iterator
-                Iterator(const Iterator& other): m_container(other.m_container), index(other.index) {}
+                Iterator(const Iterator& other) noexcept: m_container(other.m_container), index(other.index) {}
 
                 //copy assignment operator
-                Iterator& operator=(const Iterator& other) {
+                Iterator& operator=(const Iterator& other) noexcept {
                     if (this != &other) {
-                        //m_container = other.m_container;
+                        m_container = other.m_container;
                         index = other.index;
                     }
                     return *this;
@@ -82,7 +82,7 @@ class Vector{
                 //move assignment operator
                 Iterator& operator=(Iterator&& other) noexcept {
                     if (this != &other) {
-                        //m_container = other.m_container;
+                        m_container = other.m_container;
                         index = other.index;
                         other.index = 0; 
 
@@ -91,25 +91,24 @@ class Vector{
                 }
 
 
-
-
         /* Write your operator overloads here.*/
                 
 
         /* Post and pre increment and decrement operators*/
 
                 Iterator & operator++(){ //by reference
-                    if (index >= m_container.size()){throw VectorException("out of bounds");}
+                    if (index > m_container.size()){throw VectorException("out of bounds");}
+                    
                     ++index;
+
                     return *this;
                 }
 
                 Iterator operator++(int){
-                    if (index >= m_container.size()){throw VectorException("out of bounds"); }
+                    if (index > m_container.size()){throw VectorException("out of bounds"); }
                     
                     Iterator temp = *this; //make copy because it is post increment
                     ++index;
-                    //++(*this);
                     return temp;
                 }
 
@@ -141,7 +140,7 @@ class Vector{
         /* Overloaded -= size_t operator */
 
                 Iterator & operator-=(size_t offset){
-                    if((index - offset) <= 0){throw VectorException("out of bounds");}
+                    if((index - offset) < 0){throw VectorException("out of bounds");}
                     index -= offset;
                     return *this;
                                     }
@@ -169,7 +168,7 @@ class Vector{
 
                 bool operator==(const Iterator& second) const noexcept{
                 // Ensure they are from the same container and point to the same index
-                if (m_container == second.m_container ){
+                if (m_container == second.m_container && index == second.index){
                     return true;
                 } 
                 return false;
@@ -179,7 +178,7 @@ class Vector{
 
         /* Overloaded != operator. The right hand side is const Iterator& */
                 bool operator!=(const Iterator& second) const noexcept{
-                    if (m_container != second.m_container){
+                    if (m_container != second.m_container || index != second.index){
                         return true;
                     }
                     return false;
@@ -260,13 +259,17 @@ class Vector{
 
     /* The begin() function */
         Iterator begin() noexcept{
+
             return Iterator(*this, 0);
         }
 
 
     /* The const version of begin(). Note: it returns a const T* type */
         T const * begin() const noexcept{
-            if (m_size == 0) {return nullptr; }
+            if (m_size == 0) {
+                //return end();
+                return nullptr;
+                }
             
             return &buffer[0];
         }
@@ -287,7 +290,7 @@ class Vector{
     /* The const version of end(). Note: it returns a const T* */
         T const * end() const noexcept{
             if (m_size == 0) {return nullptr; }
-            return &buffer[0];
+            return &buffer[m_size];
         }
 
     //m_size
@@ -322,12 +325,11 @@ class Vector{
         //if it is 0, set capacity to 1, else twice its size
         if (m_size==0){
             capacity = 1;
-        }
-        else{
-            capacity = capacity * 2;
-        }
-
-        buffer[m_size] = item;
+        } else if (m_size == capacity) {
+            resize(capacity * 2); // Double the capacity when full
+        } else{
+        
+            buffer[m_size] = item;}
 
     }
 
@@ -504,6 +506,22 @@ class Vector{
     Make sure to use std::move() to move data from the old buffer to the new one.
     Make sure you don't leak memory!
     */
+    void resize(size_t new_capacity) {
+        // Allocate a new buffer
+        T* new_buffer = new T[new_capacity];
+
+        //this = new_buffer;
+        
+        // Copy existing elements to the new buffer
+        for (size_t i = 0; i < m_size; ++i) {
+            new_buffer[i] = std::move(buffer[i]);
+        }
+        
+        delete[] buffer;
+        buffer = new_buffer;
+        capacity = new_capacity;
+    }
+
 
 
 
