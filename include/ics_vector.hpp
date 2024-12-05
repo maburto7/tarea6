@@ -1,3 +1,6 @@
+#ifndef ICS_VECTOR_HPP
+#define ICS_VECTOR_HPP
+
 /*
 We are giving you guiding comments to help you fill out this header file.
 The indentation of the comments serve as hints to how your code is structured. 
@@ -26,7 +29,7 @@ class Vector{
     /* Begin by specifying private members of Vector */
     private:
         size_t capacity;
-        size_t size;
+        size_t m_size;
         T* buffer;
 
         /* We want to nest the Iterator class definition right here */
@@ -49,7 +52,34 @@ class Vector{
                 Iterator(Vector<T>& m_container , size_t index) //vectors take a container and an index only
                 : m_container(m_container), index(index) {} //assign the values  to the private attributes of class vector
 
-        
+
+                //big 5
+                //deepcopy iterator
+                Iterator(const Iterator& other): m_container(other.m_container), index(other.index) {}
+
+                //copy assignment operator
+                Iterator& operator=(const Iterator& other) {
+                    if (this != &other) {
+                        m_container = other.m_container;
+                        index = other.index;
+                    }
+                    return *this;
+                }
+
+                //move assignment operator
+                Iterator& operator=(Iterator&& other) noexcept {
+                    if (this != &other) {
+                        m_container = other.m_container;
+                        index = other.index;
+                        other.index = 0; 
+                        other.m_container = nullptr;
+                    }
+                    return *this;
+                }
+
+
+
+
         /* Write your operator overloads here.*/
                 
 
@@ -57,16 +87,16 @@ class Vector{
 
                 Iterator & operator++(){ //by reference
                     if (index >= m_container.size()){throw VectorException("out of bounds");}
-                    
                     ++index;
                     return *this;
                 }
 
-                Iterator operator++(){
+                Iterator operator++(int){
                     if (index >= m_container.size()){throw VectorException("out of bounds"); }
                     
                     Iterator temp = *this; //make copy because it is post increment
                     ++index;
+                    //++(*this);
                     return temp;
                 }
 
@@ -77,44 +107,39 @@ class Vector{
                     }
 
                 
-                Iterator operator--(){
-                    if (index < m_container.size() || index ==0){throw VectorException("out of bounds");}
+                Iterator operator--(int){
+                    if (index < m_container.size()|| index ==0){throw VectorException("out of bounds");}
                     
                     Iterator temp = *this;
                     --index;
                     return temp;
-                        }
+                     }
 
 
         /* Overloaded += size_t operator */
 
-                Iterator & operator+=(size_t offset) const{
+                Iterator & operator+=(size_t offset){
                     if((index + offset) > m_container.size()){throw VectorException("out of bounds");}
-                    Iterator temp = *this;
-                    temp.index += offset;
+                    index += offset;
                     //index += offset;
                     return *this;
                                     }
 
         /* Overloaded -= size_t operator */
 
-                Iterator & operator-=(size_t offset) const{
+                Iterator & operator-=(size_t offset){
                     if((index - offset) <= 0){throw VectorException("out of bounds");}
-
-                    Iterator temp = *this;
-                    temp.index -= offset;
-                    //index -= offset;
+                    index -= offset;
                     return *this;
                                     }
 
 
         /* Overloaded - operator. The right hand side is a const Iterator& */
                 size_t operator-(const Iterator & second) const{
-                    if (m_container == second.m_container){
-                        return index - second.index;
-                    } else{
-                        throw VectorException("iterators point to different containers");
-                    }
+                    if (m_container != second.m_container){throw VectorException("iterators point to different containers");}
+                    
+                    return index - second.index;
+                    
                 }
 
         /* Overloaded - operator.  The right hand side is a size_t */
@@ -131,30 +156,27 @@ class Vector{
 
                 bool operator==(const Iterator& second) const noexcept{
                 // Ensure they are from the same container and point to the same index
-                if (m_container == second.m_container && index == second.m_container){
+                if (m_container == second.m_container ){
                     return true;
-                
-                } else{
-                    return false;
-                }
-        }
-
-
-        /* Overloaded != operator. The right hand side is const Iterator& */
-                bool operator!=(const Iterator& second) const noexcept{
-                    
-                if (m_container != second.m_container || index != second.m_container){
-                    return true;
-                
-                }
+                } 
                 return false;
                 
         }
 
 
+        /* Overloaded != operator. The right hand side is const Iterator& */
+                bool operator!=(const Iterator& second) const noexcept{
+                    if (m_container != second.m_container){
+                        return true;
+                    }
+                    return false;
+              
+        }
+
+
         /* Overloaded star (*) operator to dereference. This returns a T& */
                 T & operator*() const{
-                    if (index == m_container.size()){
+                    if (index >= m_container.size()){
                         throw VectorException("out of bounds");
                         }
 
@@ -163,7 +185,7 @@ class Vector{
 
 
         /* Overloaded -> operator. This returns a T* */
-                T & operator->() const{
+                T * operator->() const{
                     if (index == m_container.size()){throw VectorException("out of bounds");}
                     
                     return &m_container.buffer[index];
@@ -182,45 +204,83 @@ class Vector{
 /* You will define your public Vector members here*/
 
     /* Default constructor */
-        Vector() : capacity(0), size(0), buffer(nullptr){}
+        Vector() : capacity(0), m_size(0), buffer(nullptr){}
 
 
     /* An overloaded constructor (see README) */
         Vector(size_t capacity): capacity(capacity), buffer(capacity){}
 
 
+      Vector& operator=(Vector& other) noexcept {
+        if (this != &other) {
+            if (capacity != other.capacity){
+            delete[] buffer; //deallocate buffer
+
+            //recreate vector
+            buffer = new T[capacity];
+
+            for (size_t i = 0; i < m_size; ++i) { //copying every value
+                buffer[i] = other.buffer[i];
+            }
+
+            //buffer = other.buffer;
+            capacity = other.capacity;
+            m_size = other.m_size;
+
+        }}
+        return *this;
+    }
+
+    //move semantics
+    Vector(Vector&& other) noexcept{
+    
+        buffer = other.buffer;
+        capacity = other.capacity;
+        m_size = other.m_size;
+
+        other.buffer = nullptr;
+        other.capacity = 0;
+        other.m_size = 0;
+        
+    }
+
+
     /* The begin() function */
         Iterator begin() noexcept{
-            return Iterator(*this, 0)
+            return Iterator(*this, 0);
         }
 
 
     /* The const version of begin(). Note: it returns a const T* type */
-        T const * begin(){
-            if (size == 0) {return nullptr; }
+        T const * begin(int){
+            if (m_size == 0) {return nullptr; }
             
-            return const Iterator(*this, 0);
+            return &buffer[0];
         }
 
     /* The empty() function */
     bool empty() const noexcept{
-        size == 0 ? true: false;
+        return m_size == 0;
     }
         
 
     /* The end() function */
         Iterator end() noexcept{
-            return Iterator(*this, size);
+            return Iterator(*this, m_size);
         }
 
 
 
     /* The const version of end(). Note: it returns a const T* */
         T const * end() const noexcept{
-            if (size == 0) {return nullptr; }
-            return const Iterator(*this, size);
+            if (m_size == 0) {return nullptr; }
+            return &buffer[0];
         }
 
+    //m_size
+    size_t size() const noexcept{
+        return m_size;
+    }
 
 
     /* The front() function */
@@ -245,8 +305,17 @@ class Vector{
 
     /* The push_back() function */
 
+    void push_back(const T& item){
+        //if it is 0, set capacity to 1, else twice its size
+        if (m_size==0){
+            capacity = 1;
+        } else{
+            capacity = capacity * 2;
+        }
 
+        buffer[m_size] = item;
 
+    }
 
 
 
@@ -275,7 +344,7 @@ class Vector{
     /* The capacity() function */
 
 
-    /* The size() function */
+    /* The m_size() function */
 
 
     /* The data() function. Returns type T* */
@@ -330,25 +399,42 @@ class Vector{
     Make sure the sizes of the vectors are equal
     Also check the elements inside are equal.
     */
-
-
-
-
-
-
-
+    bool operator==(const Vector & other) const noexcept{
+        if(m_size == other.m_size){
+            int m = m_size;
+            for(int i=0;i<m;i++){
+                if(buffer[i] != other.buffer[i]){
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
 
 
 
     /* Overloaded != operator. */
-
+    bool operator!=(const Vector &other) const noexcept{
+        if(m_size!= other.size()){
+            return true;
+        }
+        return false;
+    }
 
     /* Vector copy constructor. Does a deep copy! */
+    Vector(const Vector& other){
+        size_t capacity, m_size;
+        capacity = other.capacity;
+        m_size  = other.m_size;
+        
+        buffer = new T[capacity];
 
-
-
-
+        for (size_t i = 0; i < m_size; ++i) { //copying every value
+            buffer[i] = other.buffer[i];
+        }
+    }
 
 
 
@@ -447,15 +533,6 @@ class Vector{
     Move assignment here
     Make sure there are not memory leaks!
     */
-
-
-};
-
-
-
-
-
-
     
     /* The Vector destructor goes here. Make sure there are no leaks */
     ~Vector(){
@@ -466,3 +543,9 @@ class Vector{
 And we are finished with this header file! 
 If you used an #ifndef #define, what should you add at the very end?
 */
+
+
+};
+#endif
+
+
