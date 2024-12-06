@@ -20,12 +20,12 @@ Which include directives should you put here?
 (hint: we may throw VectorExceptions. We also want to use ostream)
 */
 
-template <typename T>
+
 /*
 Templated Vector class definition with templated Iterator class member
 The template type name can be T
 */
-class Vector{
+template <typename T> class Vector{
     /* Begin by specifying private members of Vector */
     private:
         size_t m_capacity;
@@ -40,34 +40,13 @@ class Vector{
 
         class Iterator{
 
-            
-            friend Iterator operator+(size_t offset, const Iterator &iter){
-                Iterator temp = iter;
-                //temp.index += offset;
-                //if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
-                for(size_t i=0; i<offset;i++ ){
-                    ++temp;
-                }
-                //temp.index = temp.index + offset;
-                return temp;
-            }
-
-
-            friend Iterator operator+(const Iterator &iter, size_t offset) {
-                Iterator temp = iter;
-                //if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
-                //temp.index = temp.index + offset;
-
-                for(size_t i=0; i<offset;i++){
-                    ++temp;
-                }
-                return temp;
-        }
 
 
             private:
                 Vector<T>& m_container; //reference of a vector of type T is stored in variable
                 size_t index;
+
+                
 
             public:
         
@@ -91,6 +70,8 @@ class Vector{
                     }
                     return *this;
                 }
+                //move constructor
+                Iterator(Iterator&&other) noexcept: m_container(other.m_container),index(other.index){other.index =0;}
 
                 //move assignment operator
                 Iterator& operator=(Iterator&& other) noexcept {
@@ -206,6 +187,29 @@ class Vector{
                     return &m_container.buffer[index];
                 }
 
+                friend Iterator operator+(size_t offset, const Iterator &iter){
+                    Iterator temp = iter;
+                    //temp.index += offset;
+                    //if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
+                    for(size_t i=0; i<offset;i++ ){
+                        ++temp;
+                    }
+                    //temp.index = temp.index + offset;
+                    return temp;
+            }
+
+
+                friend Iterator operator+(const Iterator &iter, size_t offset) {
+                    Iterator temp = iter;
+                    //if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
+                    //temp.index = temp.index + offset;
+
+                    for(size_t i=0; i<offset;i++){
+                        ++temp;
+                    }
+                    return temp;
+            }
+
         /*
         It is correct to add a size_t to an Iterator.
         What keyword should you use to specify these next two overloads? (It's in the README)
@@ -223,12 +227,43 @@ class Vector{
 
 
     /* An overloaded constructor (see README) */
-        Vector(size_t m_capacity): m_capacity(m_capacity), buffer(new T[m_capacity]){}
+        Vector(size_t m_capacity): m_capacity(m_capacity), m_size(0),buffer(nullptr){
+            buffer = new T[m_capacity];
+        }
 
 
+        /* Vector copy constructor. Does a deep copy! */
+        Vector(const Vector& other) noexcept
+            : m_capacity(other.capacity()), m_size(other.size()), buffer(new T[other.capacity()]) {
+            for (size_t i = 0; i < m_size; ++i) {
+                buffer[i] = other.buffer[i];
+            }
+        }
+
+        //copy assignment operator
         Vector& operator=(const Vector &other) {
+            if (this != &other){
+                //clear();
+                delete [] buffer;
+                m_capacity = other.capacity();
+                m_size = other.size();
+                T* temp = new T[other.capacity()];
+                for (size_t i = 0; i < size(); ++i){
+                    temp[i] = other.buffer[i];
+                }
+                buffer = temp;
+            }
+            
+        return *this;
+
+            /*
             if (this == &other) {return *this;}
-            clear();
+            
+            //clear()
+            for (size_t i = 0; i < m_size; ++i) {
+                buffer[i].~T(); // Explicitly destroy each element
+            }
+            
 
             if (m_capacity != other.m_capacity){
                 delete[] buffer;
@@ -237,24 +272,28 @@ class Vector{
             }
             
             for (size_t i = 0; i < other.m_size; ++i) { //copying every value
-                buffer[i] = other.buffer[i];            }
+                buffer[i] = other.buffer[i];
+                //new (buffer + i) T(other.buffer[i]);
+                }
 
             m_size = other.m_size;
             return *this;
+            */
             } 
         
      
         //move semantics
-        Vector(Vector&& other) noexcept {
-            
-            buffer = other.buffer;
-            m_capacity = other.m_capacity;
-            m_size = other.m_size;
+        Vector(Vector&& other) noexcept :m_capacity(other.capacity()),m_size(other.size()),buffer(other.buffer){
+            //buffer = other.buffer;
+            //m_capacity = other.m_capacity;
+            //m_size = other.m_size;
 
             other.buffer = nullptr;
             other.m_capacity = 0;
             other.m_size = 0;
-}
+
+        }
+            
 
         Vector& operator=(Vector&& other) noexcept{
             if(this!=&other){
@@ -272,6 +311,55 @@ class Vector{
             }
             return *this;
         }
+
+          bool operator==(const Vector& other) const noexcept {
+            //]if (this == &other) {
+            //    return true;
+            //}
+            if (this == &other) {
+                return true;
+            }
+
+            if (m_size == other.m_size) {
+                for (size_t i = 0; i < m_size; ++i) {
+                    if (buffer[i] != other.buffer[i]) {
+                        return false;
+                    }
+                }return true;
+                }
+                return false;
+            
+            /*
+            if (this == &other) {
+                return true;
+    }
+
+            if (size() == other.size()) {
+                for (size_t i = 0; i < size(); ++i) {
+                    if (buffer[i] != other.buffer[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            return false;
+            */
+            
+        }
+
+        
+
+        /* Overloaded != operator. */
+        bool operator!=(const Vector &other) const noexcept{
+            //if(this != &other){
+            //    return true;}
+            
+            //return false;
+            return !(*this == other);
+        }
+
+        
 
     /* The begin() function */
         Iterator begin() noexcept{
@@ -347,13 +435,16 @@ class Vector{
 
         void push_back(const T& item) {
             // If size is 0, set m_capacity to 1
-            
-            //buffer = new T[m_capacity]; 
-            if (m_size == m_capacity) {
-                if (m_size == m_capacity) {resize(m_capacity == 0 ? 1 : m_capacity * 2);}
-            }
 
-            buffer[m_size] = item; 
+            //if (size() == capacity()) {
+            //    if (size() == capacity()) {resize(m_capacity == 0 ? 1 : m_capacity * 2);}
+            //}
+            if (size() == capacity()) {
+                if (size() == capacity()) {resize(m_capacity == 0 ? 1 : m_capacity * 2); }
+                }
+
+
+            buffer[size()] = item; 
             ++m_size; 
         }
 
@@ -361,11 +452,11 @@ class Vector{
         void push_back(T&& item){
             // If size is 0, set m_capacity to 1
             
-            if (m_size == m_capacity) {
-                if (m_size == m_capacity) {resize(m_capacity == 0 ? 1 : m_capacity * 2); }
+            if (size() == capacity()) {
+                if (size() == capacity()) {resize(m_capacity == 0 ? 1 : m_capacity * 2); }
                 }
 
-            buffer[m_size] = std::move(item);
+            buffer[size()] = std::move(item);
             ++m_size; 
         }
 
@@ -395,7 +486,7 @@ class Vector{
 
 
         /* The const version of data(). Returns type const T* */
-        T const * data(int) const noexcept{
+        T const * data() const noexcept{
             return buffer;
         }
 
@@ -416,45 +507,35 @@ class Vector{
     Hint: resize the vector to include only 0 4 5. You will implement resize anyways.
     */
 
-        void erase(Iterator start, Iterator end) {
-            if (start == end) {
-                return; // No elements to erase
-            }
-            /*
-            //size_t startIndex = start.begin();
-            //size_t endIndex = end.index;
 
-            // Shift elements left
-            for (size_t i = endIndex; i < m_size; ++i) {
-                buffer[startIndex++] = std::move(buffer[i]);
-            }
+        void erase(Iterator start, Iterator end){
 
-            // Destroy the now-unused elements
-            for (size_t i = startIndex; i < m_size; ++i) {
-                buffer[i].~T();
+            std::size_t range = end - start; 
+            Iterator incrementStart = start;
+            Iterator incrementEnd = end;
+
+            while(incrementEnd != this->end()){
+                this->swap_elements(incrementStart, incrementEnd);
+                ++incrementStart;
+                ++incrementEnd;
+                //++counter;
             }
 
-            m_size -= (endIndex - start.index);
-            */
-        }
+            resize(m_size - range);
+
+    }
+        
 
 
 
 
 
     /* swap_elements(). Takes two iterators. Use std::move ! */
-        void swap_elements(Iterator iter1, Iterator iter2) {
-            if (iter1 == iter2) {
-                return;
-            }
-            std::swap(buffer[iter1.index], buffer[iter2.index]);
+        void swap_elements(Iterator lhs, Iterator rhs) noexcept {
+            T temp = std::move(*lhs);
+            *lhs = std::move(*rhs);
+            *rhs = std::move(temp);
         }
-
-
-
-
-
-
 
     /* Subscript operator[] overload */
 
@@ -473,42 +554,8 @@ class Vector{
     Make sure the sizes of the vectors are equal
     Also check the elements inside are equal.
     */
-        bool operator==(const Vector& other) const noexcept {
-            if (this == &other) {
-                return true;
-            }
-
-            if (this->m_size == other.m_size) {
-                for (size_t i = 0; i < this->m_size; ++i) {
-                    if (this->buffer[i] != other.buffer[i]) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            return false;
-        }
-
+      
         
-
-        /* Overloaded != operator. */
-        bool operator!=(const Vector &other) const noexcept{
-            //if(this != &other){
-            //    return true;}
-            
-            //return false;
-            return !(*this == other);
-        }
-
-        /* Vector copy constructor. Does a deep copy! */
-        Vector(const Vector& other)
-            : m_capacity(other.m_capacity), m_size(other.m_size), buffer(new T[other.m_capacity]) {
-            for (size_t i = 0; i < m_size; ++i) {
-                buffer[i] = other.buffer[i];
-            }
-        }
-       
     /* 
     Vector assignment operator.
     Make sure you don't leak memory here. 
@@ -538,6 +585,12 @@ class Vector{
     like std::cout << v << std::endl;
     You should use the friend keyword somewhere in here. 
     */
+        friend std::ostream& operator<<(std::ostream& out, const Vector& vector){
+            for (size_t i = 0; i < vector.size(); ++i){
+                out << vector.at(i) << " "; 
+            }
+            return out;
+    }
 
 
 
@@ -595,7 +648,7 @@ class Vector{
     */
 
         void clear() noexcept {
-            for (size_t i = 0; i < m_size; ++i) { //destructing every value
+            for (size_t i = 0; i < size(); ++i) { //destructing every value
                 buffer[i].~T(); }
         
             m_size = 0;
@@ -611,7 +664,8 @@ class Vector{
     */
     
     /* The Vector destructor goes here. Make sure there are no leaks */
-        ~Vector() noexcept{
+        ~Vector(){
+            clear();
             delete [] buffer;
         }
 
