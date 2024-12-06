@@ -12,7 +12,7 @@ Some functions may throw exceptions while others are noexcept.
 */
 
 /* Preprocessor directives. Guard the header file upon include */
-#include <ostream>
+#include <iosfwd>
 #include <vector_exception.hpp>
 
 /*
@@ -28,7 +28,7 @@ The template type name can be T
 class Vector{
     /* Begin by specifying private members of Vector */
     private:
-        size_t capacity;
+        size_t m_capacity;
         size_t m_size;
         T* buffer;
 
@@ -44,18 +44,23 @@ class Vector{
             friend Iterator operator+(size_t offset, const Iterator &iter){
                 Iterator temp = iter;
                 //temp.index += offset;
-                if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
-                
-                temp.index = temp.index + offset;
+                //if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
+                for(size_t i=0; i<offset;i++ ){
+                    ++temp;
+                }
+                //temp.index = temp.index + offset;
                 return temp;
             }
 
 
             friend Iterator operator+(const Iterator &iter, size_t offset) {
                 Iterator temp = iter;
-                if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
-                
-                temp.index = temp.index + offset;
+                //if (temp.index + offset > temp.m_container.size()) { throw VectorException("out of bounds on vector");}
+                //temp.index = temp.index + offset;
+
+                for(size_t i=0; i<offset;i++){
+                    ++temp;
+                }
                 return temp;
         }
 
@@ -156,17 +161,17 @@ class Vector{
 
         /* Overloaded - operator. The right hand side is a const Iterator& */
                 size_t operator-(const Iterator & second) const{
-                    if (m_container == second.m_container && index == second.index){
-                        return index - second.index;
-                    } 
-                    throw VectorException("iterators point to different containers");}
+                    if (&m_container != &second.m_container){
+                        throw VectorException("iterators point to different containers");}
+                    return index - second.index;
+                }
                     
                     
 
         /* Overloaded - operator.  The right hand side is a size_t */
                 Iterator operator-(size_t offset) const{
-                    
                     if (index < offset) { throw VectorException("out of bounds");}
+                    
                     Iterator temp = *this;
                     temp.index = index - offset;
                     return temp;
@@ -177,22 +182,15 @@ class Vector{
 
                 bool operator==(const Iterator& second) const noexcept{
                 // Ensure they are from the same container and point to the same index
-                if (m_container == second.m_container && index == second.index){
-                    return true;
-                } 
-                return false;
+                    return &m_container == &second.m_container && index == second.index;}
                 
-        }
+                
+        
 
 
         /* Overloaded != operator. The right hand side is const Iterator& */
                 bool operator!=(const Iterator& second) const noexcept{
-                    if (m_container != second.m_container || index != second.index){
-                        return true;
-                    }
-                    return false;
-              
-        }
+                    return m_container != second.m_container || index != second.index;}
 
 
         /* Overloaded star (*) operator to dereference. This returns a T& */
@@ -225,27 +223,27 @@ class Vector{
 /* You will define your public Vector members here*/
 
     /* Default constructor */
-        Vector() : capacity(0), m_size(0), buffer(nullptr){}
+        Vector() : m_capacity(0), m_size(0), buffer(nullptr){}
 
 
     /* An overloaded constructor (see README) */
-        Vector(size_t capacity): capacity(capacity), buffer(capacity){}
+        Vector(size_t m_capacity): m_capacity(m_capacity), buffer(new T[m_capacity]){}
 
 
         Vector& operator=(Vector& other) noexcept {
             if (this != &other) {
-                if (capacity != other.capacity){
+                if (m_capacity != other.m_capacity){
                 delete[] buffer; //deallocate buffer
 
                 //recreate vector
-                buffer = new T[capacity];
+                buffer = new T[m_capacity];
 
                 for (size_t i = 0; i < m_size; ++i) { //copying every value
                     buffer[i] = other.buffer[i];
                 }
 
                 //buffer = other.buffer;
-                capacity = other.capacity;
+                m_capacity = other.m_capacity;
                 m_size = other.m_size;
 
             }}
@@ -256,11 +254,11 @@ class Vector{
         Vector(Vector&& other) noexcept{
         
             buffer = other.buffer;
-            capacity = other.capacity;
+            m_capacity = other.m_capacity;
             m_size = other.m_size;
 
             other.buffer = nullptr;
-            other.capacity = 0;
+            other.m_capacity = 0;
             other.m_size = 0;
             
         }
@@ -310,36 +308,40 @@ class Vector{
 
     /* The front() function */
         T & front() noexcept{
-            if(empty()){throw VectorException("front empty");}
+            //if(empty()){throw VectorException("front empty");}
             return buffer[0];
         }
 
     /* The const version of front(). Note it returns a const T& this is different from begin()! */
 
         T const & front() const noexcept{
-            if(empty()){throw VectorException("front empty");}
+            //if(empty()){throw VectorException("front empty");}
             return buffer[0];
         }
 
     /* The back() function */
-
-
-
+        T & back() noexcept{
+        //if(empty()){throw VectorException("back empty");}
+        
+        return buffer[m_size-1];}
 
     /* The const version of back(). Note: it returns a const T& */
 
-
+        T const & back() const noexcept{
+            //if(empty()){throw VectorException("back empty");}
+            //if (m_size == 0) {throw VectorException("back on empty vector")}
+            return buffer[m_size-1];
+        }
 
 
     /* The push_back() function */
 
         void push_back(const T& item) {
-            // If size is 0, set capacity to 1
-            if (m_size == 0) {
-                capacity = 1;
-                buffer = new T[capacity]; 
-            } else if (m_size == capacity) {
-                resize(capacity * 2); 
+            // If size is 0, set m_capacity to 1
+            
+            //buffer = new T[m_capacity]; 
+            if (m_size == m_capacity) {
+                if (m_size == m_capacity) {resize(m_capacity == 0 ? 1 : m_capacity * 2);}
             }
 
             buffer[m_size] = item; 
@@ -349,11 +351,16 @@ class Vector{
  
     /* The push_back function that takes an RValue reference (Type of T&&) */
 
+        void push_back(T&& item){
+            // If size is 0, set m_capacity to 1
+            
+            if (m_size == m_capacity) {
+                if (m_size == m_capacity) {resize(m_capacity == 0 ? 1 : m_capacity * 2); }
+                }
 
-
-
-
-
+            buffer[m_size] = std::move(item);; 
+            ++m_size; 
+        }
 
 
 
@@ -366,17 +373,22 @@ class Vector{
 
 
 
-    /* The capacity() function */
+    /* The m_capacity() function */
+        size_t capacity() const noexcept{
+            return m_capacity;
+        }
+
+ 
+        /* The data() function. Returns type T* */
+        T * data() noexcept{
+            return buffer;
+        }
 
 
-    /* The m_size() function */
-
-
-    /* The data() function. Returns type T* */
-
-
-    /* The const version of data(). Returns type const T* */
-
+        /* The const version of data(). Returns type const T* */
+        T const * data(int){
+            return buffer;
+        }
 
     /* 
     The erase function. It takes in a start and end Iterator.
@@ -400,12 +412,6 @@ class Vector{
 
 
 
-
-
-
-
-
-
     /* swap_elements(). Takes two iterators. Use std::move ! */
 
 
@@ -417,49 +423,56 @@ class Vector{
 
 
     /* Const version of the subscript operator[] overload */
-
+        T & operator[](size_t index) noexcept{
+            return buffer[index];
+        }
+        
+        T const & operator[](size_t index) const noexcept{
+            return buffer[index];
+        }
 
     /* 
     Overloaded == operator. The right hand side is another const<T>& vector.
     Make sure the sizes of the vectors are equal
     Also check the elements inside are equal.
     */
-    bool operator==(const Vector & other) const noexcept{
-        if(m_size == other.m_size){
-            int m = m_size;
+        bool operator==(const Vector & other) const noexcept{
+            if (this == &other){
+                return true;
+            }
+            if(this->m_size != other.m_size){
+                return false;
+            }
+            int m = this->m_size;
             for(int i=0;i<m;i++){
                 if(buffer[i] != other.buffer[i]){
                     return false;
+                    }
                 }
-            }
-            return true;
-        }
-        return false;
-    }
-
-
-
-
-    /* Overloaded != operator. */
-    bool operator!=(const Vector &other) const noexcept{
-        if(m_size!= other.size()){
-            return true;
-        }
-        return false;
-    }
-
-    /* Vector copy constructor. Does a deep copy! */
-    Vector(const Vector& other){
-        size_t capacity, m_size;
-        capacity = other.capacity;
-        m_size  = other.m_size;
+            return true; }
         
-        buffer = new T[capacity];
 
-        for (size_t i = 0; i < m_size; ++i) { //copying every value
-            buffer[i] = other.buffer[i];
+        /* Overloaded != operator. */
+        bool operator!=(const Vector &other) const noexcept{
+            //if(this != &other){
+            //    return true;}
+            
+            //return false;
+            return !(*this == other);
         }
-    }
+
+        /* Vector copy constructor. Does a deep copy! */
+        Vector(const Vector& other){
+            //size_t m_capacity, m_size;
+            m_capacity = other.m_capacity;
+            m_size  = other.m_size;
+            
+            buffer = new T[m_capacity];
+
+            for (size_t i = 0; i < m_size; ++i) { //copying every value
+                buffer[i] = other.buffer[i];
+            }
+        }
 
 
 
@@ -469,32 +482,35 @@ class Vector{
     */
 
 
+    
+    // Shallow Assignment Operator
+        Vector& operator=(const Vector& other) {
+            if (this != &other) {
+                m_size = other.size;
+                m_capacity= other.m_capacity;
+                buffer = other.data;
+            }
+            return *this;
+        }
 
 
-
-
-
-
-
+ 
     /* at() function. */
-
-
-
-
-
-
-
+        T & at(size_t index){
+            if(empty()){throw VectorException("front empty");}
+            if((index >= m_size && m_size!=1) || index < 0 ){throw VectorException("out of bound");}
+            return buffer[index];
+        }
 
 
     /* const version of at() */
+        T const & at(size_t index) const{
+            if(empty()){throw VectorException("front empty");}
+            if((index >= m_size && m_size!=1) || index < 0){throw VectorException("out of bound");}
+            return buffer[index];
+        }
 
-
-
-
-
-
-
-
+//if(empty()){throw VectorException("front empty");}
 
     /* 
     operator<< 
@@ -505,9 +521,6 @@ class Vector{
 
 
 
-
-
-
     /*
     Vector resize() function here.
     Allocate a new buffer to move all the old elements from the old one to.
@@ -515,39 +528,29 @@ class Vector{
     Make sure to use std::move() to move data from the old buffer to the new one.
     Make sure you don't leak memory!
     */
-    void resize(size_t new_capacity) {
-        // Allocate a new buffer
-        T* new_buffer = new T[new_capacity];
+        void resize(size_t new_capacity) {
+            // Allocate a new buffer
+            if(new_capacity == m_capacity){return;}
+            
+            T* new_buffer = new T[new_capacity];
 
-        //this = new_buffer;
+
+            if(new_capacity < m_size){
+                for (size_t i = 0; i < new_capacity; ++i) {
+                    new_buffer[i] = std::move(buffer[i]);}
+                    m_size = new_capacity;
+
+            }else{
+                for (size_t i = 0; i < m_size; ++i) {
+                    new_buffer[i] = std::move(buffer[i]);
+                }
+            }
+            
+            delete[] buffer;
+            buffer = new_buffer;
+            m_capacity = new_capacity;
         
-        // Copy existing elements to the new buffer
-        for (size_t i = 0; i < m_size; ++i) {
-            new_buffer[i] = std::move(buffer[i]);
         }
-        
-        delete[] buffer;
-        buffer = new_buffer;
-        capacity = new_capacity;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -576,15 +579,14 @@ class Vector{
     */
     
     /* The Vector destructor goes here. Make sure there are no leaks */
-    ~Vector(){
-        delete [] buffer;
-    }
+        ~Vector(){
+            delete [] buffer;
+        }
 
 /* 
 And we are finished with this header file! 
 If you used an #ifndef #define, what should you add at the very end?
 */
-
 
 };
 #endif
