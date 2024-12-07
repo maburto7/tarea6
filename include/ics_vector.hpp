@@ -495,7 +495,7 @@ template <typename T> class Vector{
     You should use the friend keyword somewhere in here. 
     */
         friend std::ostream& operator<<(std::ostream& out, const Vector& vec){
-            for (size_t i = 0; i < v.size(); ++i){
+            for (size_t i = 0; i < vec.size(); ++i){
                 out << vec.at(i) << " "; 
             }
             return out;
