@@ -40,13 +40,9 @@ template <typename T> class Vector{
 
         class Iterator{
 
-
-
             private:
                 Vector<T>& m_container; //reference of a vector of type T is stored in variable
                 size_t index;
-
-                
 
             public:
         
@@ -59,7 +55,7 @@ template <typename T> class Vector{
 
 
                 //big 5
-                //deepcopy iterator
+                //deepcopy iterator constructor
                 Iterator(const Iterator& other) noexcept: m_container(other.m_container), index(other.index) {}
 
                 //copy assignment operator
@@ -243,7 +239,6 @@ template <typename T> class Vector{
         //copy assignment operator
         Vector& operator=(const Vector &other) {
             if (this != &other){
-                //clear();
                 delete [] buffer;
                 m_capacity = other.capacity();
                 m_size = other.size();
@@ -256,45 +251,18 @@ template <typename T> class Vector{
             
         return *this;
 
-            /*
-            if (this == &other) {return *this;}
-            
-            //clear()
-            for (size_t i = 0; i < m_size; ++i) {
-                buffer[i].~T(); // Explicitly destroy each element
-            }
-            
-
-            if (m_capacity != other.m_capacity){
-                delete[] buffer;
-                buffer = new T[other.m_capacity];
-                m_capacity = other.m_capacity;
-            }
-            
-            for (size_t i = 0; i < other.m_size; ++i) { //copying every value
-                buffer[i] = other.buffer[i];
-                //new (buffer + i) T(other.buffer[i]);
-                }
-
-            m_size = other.m_size;
-            return *this;
-            */
             } 
         
      
-        //move semantics
+        //move semantics constructo
         Vector(Vector&& other) noexcept :m_capacity(other.capacity()),m_size(other.size()),buffer(other.buffer){
-            //buffer = other.buffer;
-            //m_capacity = other.m_capacity;
-            //m_size = other.m_size;
-
             other.buffer = nullptr;
             other.m_capacity = 0;
             other.m_size = 0;
 
         }
             
-
+        //move assignment operator
         Vector& operator=(Vector&& other) noexcept{
             if(this!=&other){
                 delete[] buffer;
@@ -312,6 +280,7 @@ template <typename T> class Vector{
             return *this;
         }
 
+
           bool operator==(const Vector& other) const noexcept {
             //]if (this == &other) {
             //    return true;
@@ -320,8 +289,8 @@ template <typename T> class Vector{
                 return true;
             }
 
-            if (m_size == other.m_size) {
-                for (size_t i = 0; i < m_size; ++i) {
+            if (m_size == other.size()) {
+                for (size_t i = 0; i < size(); ++i) {
                     if (buffer[i] != other.buffer[i]) {
                         return false;
                     }
@@ -329,27 +298,9 @@ template <typename T> class Vector{
                 }
                 return false;
             
-            /*
-            if (this == &other) {
-                return true;
-    }
-
-            if (size() == other.size()) {
-                for (size_t i = 0; i < size(); ++i) {
-                    if (buffer[i] != other.buffer[i]) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            return false;
-            */
-            
         }
 
         
-
         /* Overloaded != operator. */
         bool operator!=(const Vector &other) const noexcept{
             //if(this != &other){
@@ -358,92 +309,57 @@ template <typename T> class Vector{
             //return false;
             return !(*this == other);
         }
-
         
 
     /* The begin() function */
-        Iterator begin() noexcept{
-
-            return Iterator(*this, 0);
-        }
+        Iterator begin() noexcept{return Iterator(*this, 0);}
 
 
     /* The const version of begin(). Note: it returns a const T* type */
         T const * begin() const noexcept{
-            if (m_size == 0) {
-                //return end();
-                return nullptr;
-                }
-            
+            if (m_size == 0) {return nullptr;}
+
             return &buffer[0];
         }
 
     /* The empty() function */
-        bool empty() const noexcept{
-            return m_size == 0;
-        }
+        bool empty() const noexcept{return m_size == 0;}
         
 
     /* The end() function */
-        Iterator end() noexcept{
-            return Iterator(*this, m_size);
-        }
-
+        Iterator end() noexcept{ return Iterator(*this, m_size);}
 
 
     /* The const version of end(). Note: it returns a const T* */
-        T const * end() const noexcept{
-            if (m_size == 0) {return nullptr; }
+        T const * end() const noexcept{if (m_size == 0) {return nullptr; }
+            
             return &buffer[m_size];
         }
 
     //m_size
-        size_t size() const noexcept{
-            return m_size;
-        }
+        size_t size() const noexcept{return m_size;}
 
 
     /* The front() function */
-        T & front() noexcept{
-            //if(empty()){throw VectorException("front empty");}
-            return buffer[0];
-        }
+        T & front() noexcept{return buffer[0];}
 
     /* The const version of front(). Note it returns a const T& this is different from begin()! */
 
-        T const & front() const noexcept{
-            //if(empty()){throw VectorException("front empty");}
-            return buffer[0];
-        }
+        T const & front() const noexcept{return buffer[0];}
 
     /* The back() function */
-        T & back() noexcept{
-        //if(empty()){throw VectorException("back empty");}
-        
-        return buffer[m_size-1];}
+        T & back() noexcept{return buffer[m_size-1];}
 
     /* The const version of back(). Note: it returns a const T& */
 
-        T const & back() const noexcept{
-            //if(empty()){throw VectorException("back empty");}
-            //if (m_size == 0) {throw VectorException("back on empty vector")}
-            return buffer[m_size-1];
-        }
+        T const & back() const noexcept{return buffer[m_size-1];}
 
 
     /* The push_back() function */
 
-        void push_back(const T& item) {
-            // If size is 0, set m_capacity to 1
-
-            //if (size() == capacity()) {
-            //    if (size() == capacity()) {resize(m_capacity == 0 ? 1 : m_capacity * 2);}
-            //}
-            if (size() == capacity()) {
-                if (size() == capacity()) {resize(m_capacity == 0 ? 1 : m_capacity * 2); }
-                }
-
-
+        void push_back(const T& item){
+            
+            if (size() == capacity()) {resize(m_capacity == 0 ? 1 : m_capacity * 2); }
             buffer[size()] = item; 
             ++m_size; 
         }
@@ -461,7 +377,6 @@ template <typename T> class Vector{
         }
 
 
-
     /* The pop_back() function*/
         void pop_back(){
             if(empty()){
@@ -474,21 +389,15 @@ template <typename T> class Vector{
 
 
     /* The m_capacity() function */
-        size_t capacity() const noexcept{
-            return m_capacity;
-        }
+        size_t capacity() const noexcept{return m_capacity;}
 
  
         /* The data() function. Returns type T* */
-        T * data() noexcept{
-            return buffer;
-        }
+        T * data() noexcept{ return buffer;}
 
 
         /* The const version of data(). Returns type const T* */
-        T const * data() const noexcept{
-            return buffer;
-        }
+        T const * data() const noexcept{return buffer;}
 
     /* 
     The erase function. It takes in a start and end Iterator.
@@ -509,26 +418,30 @@ template <typename T> class Vector{
 
 
         void erase(Iterator start, Iterator end){
+            if(start==end){return;}
 
-            std::size_t range = end - start; 
-            Iterator incrementStart = start;
-            Iterator incrementEnd = end;
-
-            while(incrementEnd != this->end()){
-                this->swap_elements(incrementStart, incrementEnd);
-                ++incrementStart;
-                ++incrementEnd;
-                //++counter;
+            std::size_t offsetDelete = end - start; 
+            Iterator m_start = start;
+            Iterator m_end = end;
+            //while(m_end != *this->end()){
+            //      Iterator tmp = m_start;
+            //      m_start = std::move(m_end);
+            //      m_end = std::move(tmp)
+            //      ++m_end;
+            //      ++m_start;
+            //}
+            while(m_end != this->end()){
+                swap_elements(m_start, m_end);
+                ++m_end;
+                ++m_start;
             }
 
-            resize(m_size - range);
+            //size - offsetDelete = begin)
+            
+            resize(size() - offsetDelete);
 
     }
         
-
-
-
-
 
     /* swap_elements(). Takes two iterators. Use std::move ! */
         void swap_elements(Iterator lhs, Iterator rhs) noexcept {
@@ -541,13 +454,9 @@ template <typename T> class Vector{
 
 
     /* Const version of the subscript operator[] overload */
-        T & operator[](size_t index) noexcept{
-            return buffer[index];
-        }
+        T & operator[](size_t index) noexcept{return buffer[index];}
         
-        T const & operator[](size_t index) const noexcept{
-            return buffer[index];
-        }
+        T const & operator[](size_t index) const noexcept{return buffer[index]; }
 
     /* 
     Overloaded == operator. The right hand side is another const<T>& vector.
@@ -585,14 +494,12 @@ template <typename T> class Vector{
     like std::cout << v << std::endl;
     You should use the friend keyword somewhere in here. 
     */
-        friend std::ostream& operator<<(std::ostream& out, const Vector& vector){
-            for (size_t i = 0; i < vector.size(); ++i){
-                out << vector.at(i) << " "; 
+        friend std::ostream& operator<<(std::ostream& out, const Vector& vec){
+            for (size_t i = 0; i < v.size(); ++i){
+                out << vec.at(i) << " "; 
             }
             return out;
     }
-
-
 
     /*
     Vector resize() function here.
