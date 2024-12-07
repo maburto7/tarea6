@@ -436,7 +436,7 @@ template <typename T> class Vector{
                 ++m_start;
             }
 
-            //size - offsetDelete = begin)
+            //size - offsetDelete = begin
             
             resize(size() - offsetDelete);
 
